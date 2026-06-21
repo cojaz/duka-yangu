@@ -1971,7 +1971,62 @@ const TABS = [
   {key:"capital",    label:"Capital & Savings"},
 ];
 
+
+function LoginScreen({onLogin}) {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const handleLogin = async () => {
+    if (!email || !password) { setError('Enter email and password.'); return; }
+    setLoading(true); setError('');
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    if (err) { setError(err.message); setLoading(false); }
+  };
+  const s = {background:'#1A1815',border:'1px solid #312E29',borderRadius:8,padding:'12px 16px',color:'#EDE8DF',fontSize:15,width:'100%',boxSizing:'border-box',outline:'none',fontFamily:'inherit'};
+  return (
+    <div style={{background:'#11100F',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 24px'}}>
+      <div style={{width:'100%',maxWidth:360}}>
+        <div style={{textAlign:'center',marginBottom:40}}>
+          <div style={{fontSize:28,fontWeight:900}}>
+            <span style={{color:'#D4A843'}}>DUKA</span>
+            <span style={{color:'#EDE8DF'}}> YANGU</span>
+            <span style={{color:'#C0614A'}}> PRO</span>
+          </div>
+        </div>
+        <div style={{background:'#1C2B21',border:'1px solid #2A3D2E',borderRadius:12,padding:28}}>
+          <div style={{fontSize:14,color:'#8A8278',marginBottom:20,textAlign:'center'}}>Sign in to your dashboard</div>
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:11,color:'#8A8278',marginBottom:6}}>EMAIL</div>
+            <input type="email" placeholder="your@email.com" value={email} onChange={e=>setEmail(e.target.value)} style={s}/>
+          </div>
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:11,color:'#8A8278',marginBottom:6}}>PASSWORD</div>
+            <input type="password" placeholder="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()} style={s}/>
+          </div>
+          {error && <div style={{color:'#C0614A',fontSize:12,marginBottom:14}}>{error}</div>}
+          <button onClick={handleLogin} disabled={loading} style={{width:'100%',padding:'13px 0',background:'#D4A843',color:'#11100F',border:'none',borderRadius:8,fontSize:14,fontWeight:900,cursor:'pointer',fontFamily:'inherit'}}>
+            {loading ? 'SIGNING IN...' : 'SIGN IN'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 export default function App() {
+
+  const [session, setSession] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data:{session}})=>{
+      setSession(session); setAuthChecked(true);
+    });
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((_e,s)=>setSession(s));
+    return ()=>subscription.unsubscribe();
+  },[]);
+  if (!authChecked) return <div style={{background:'#11100F',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}><div style={{color:'#8A8278'}}>Loading...</div></div>;
+  if (!session) return <LoginScreen onLogin={()=>{}}/>;
+  const handleLogout = async () => { await supabase.auth.signOut(); setSession(null); };
   const [tab, setTab]           = useState("dash");
   const [loaded, setLoaded]     = useState(false);
   const [stock, setStock]       = useState(INITIAL_STOCK);
